@@ -75,7 +75,10 @@ _load_env_files()
 
 DEFAULTS = {
     "platform": "ios" if sys.platform == "darwin" else "android",   # iPhone needs a Mac
-    "telemetry": True,         # anonymous usage events; `config set telemetry false`
+    # Rusty's personal fork never sends usage or task content off the Mac.
+    # telemetry.py also enforces this so an environment variable cannot
+    # accidentally turn collection back on.
+    "telemetry": False,
     "android": {
         "adb": "adb",          # the binary; a path if it is not on PATH
         "poke_every": 25,      # seconds between keep-awake pokes
@@ -88,8 +91,9 @@ DEFAULTS = {
         "phone": "",           # what a bare `cloud start` names: a catalog id or label; empty = the service's unnamed start
     },
     "ios": {
-        "restore_clipboard": False,   # put the old clipboard back after a paste
-        "paste_settle": 2.0,          # ...after this many seconds, if so
+        "restore_clipboard": False,   # opt-in: put the old clipboard back after a paste
+        "clear_clipboard": True,      # default: remove text after the phone consumes it
+        "paste_settle": 2.0,          # wait this long before clearing/restoring
     },
 }
 

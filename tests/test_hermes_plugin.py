@@ -456,7 +456,7 @@ class WorkspaceSeed(unittest.TestCase):
 
 
 class TelemetryOptIn(Base):
-    """Hermes runs are opt-in. The CLI default stays on when the setting was never stored."""
+    """The personal fork keeps telemetry off across CLI and Hermes execution."""
 
     def setUp(self):
         super().setUp()
@@ -485,26 +485,26 @@ class TelemetryOptIn(Base):
         self.assertEqual(proc.returncode, 0, proc.stderr)
         return proc.stdout.strip() == "1"
 
-    def test_unset_is_off_under_hermes_and_the_cli_default_stays_on(self):
+    def test_unset_is_off_everywhere(self):
         from phone_harness.config import get, lookup
         from phone_harness.telemetry import is_enabled
 
-        self.assertEqual(lookup("telemetry"), (True, "default"))
-        self.assertTrue(get("telemetry"))
-        self.assertTrue(is_enabled())
+        self.assertEqual(lookup("telemetry"), (False, "default"))
+        self.assertFalse(get("telemetry"))
+        self.assertFalse(is_enabled())
         env = self.plugin._env(self.data / "ws")
         self.assertEqual(env["PHONE_HARNESS_TELEMETRY"], "0")
         self.assertNotIn("PHONE_HARNESS_TELEMETRY", os.environ)
-        self.assertTrue(is_enabled())
+        self.assertFalse(is_enabled())
         self.assertFalse(self.child_enabled())
 
-    def test_an_explicit_stored_true_is_on(self):
+    def test_an_explicit_stored_true_cannot_enable_collection(self):
         from phone_harness.config import set as set_config
 
         set_config("telemetry", "true")
         env = self.plugin._env(self.data / "ws")
         self.assertNotIn("PHONE_HARNESS_TELEMETRY", env)
-        self.assertTrue(self.child_enabled())
+        self.assertFalse(self.child_enabled())
 
     def test_an_explicit_stored_false_is_off(self):
         from phone_harness.config import set as set_config
@@ -516,11 +516,11 @@ class TelemetryOptIn(Base):
         self.assertEqual(env["PHONE_HARNESS_TELEMETRY"], "0")
         self.assertFalse(self.child_enabled())
 
-    def test_an_enabling_env_var_is_on(self):
+    def test_an_enabling_env_var_cannot_enable_collection(self):
         os.environ["PHONE_HARNESS_TELEMETRY"] = "true"
         env = self.plugin._env(self.data / "ws")
         self.assertEqual(env["PHONE_HARNESS_TELEMETRY"], "true")
-        self.assertTrue(self.child_enabled())
+        self.assertFalse(self.child_enabled())
 
     def test_a_disabling_env_var_is_off(self):
         os.environ["PHONE_HARNESS_TELEMETRY"] = "0"

@@ -464,7 +464,7 @@ class TopLevel(unittest.TestCase):
 
 
 class TelemetryDefault(unittest.TestCase):
-    def test_cli_telemetry_stays_on_when_the_setting_was_never_set(self):
+    def test_personal_fork_telemetry_is_off_and_cannot_be_enabled(self):
         home = tempfile.TemporaryDirectory()
         self.addCleanup(home.cleanup)
         from phone_harness.config import cli, get, lookup
@@ -472,18 +472,19 @@ class TelemetryDefault(unittest.TestCase):
 
         with mock.patch.dict(os.environ, {"PHONE_HARNESS_HOME": home.name}, clear=False):
             os.environ.pop("PHONE_HARNESS_TELEMETRY", None)
-            # GitHub Actions sets CI=true, and this repo's workflow sets
-            # PHONE_HARNESS_TELEMETRY=0. This test is the ordinary default.
             os.environ.pop("CI", None)
-            self.assertEqual(lookup("telemetry"), (True, "default"))
+            self.assertEqual(lookup("telemetry"), (False, "default"))
+            self.assertFalse(get("telemetry"))
+            self.assertFalse(is_enabled())
+            os.environ["PHONE_HARNESS_TELEMETRY"] = "true"
             self.assertTrue(get("telemetry"))
-            self.assertTrue(is_enabled())
+            self.assertFalse(is_enabled())
             out = io.StringIO()
             with contextlib.redirect_stdout(out):
                 self.assertEqual(cli([]), 0)
             line = next(item for item in out.getvalue().splitlines() if item.startswith("telemetry"))
             self.assertIn("true", line)
-            self.assertIn("(default)", line)
+            self.assertIn("(env:PHONE_HARNESS_TELEMETRY)", line)
 
 
 class SessionAndStdinGuard(unittest.TestCase):
